@@ -1,0 +1,15 @@
+### GET - Ping (con timeout 500ms)
+# @timeout 500
+GET http://localhost:3000/get/ping
+
+
+### GET - Recupera un valore per chiave
+GET http://localhost:3000/get/prova
+
+### POST - Imposta un valore per chiave
+POST http://localhost:3000/set/prova
+Content-Type: application/json
+
+{
+  "value": "esempio"
+}

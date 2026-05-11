@@ -169,3 +169,11 @@ Per fermarlo:
 cd server-docker
 docker compose down
 ```
+
+Siccome il server mantiene la chiavi memorizzate anche quando viene fermato, se si 
+volessero cancellare tutte le chiavi presenti eseguire:
+
+```bash
+cd server-docker
+docker compose down -v
+```
