@@ -1,0 +1,13 @@
+services:
+  kv-server:
+    build: .
+    container_name: kv-server
+    ports:
+      - "3000:3000"
+    volumes:
+      - kv_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  kv_data:
+
