@@ -9,9 +9,8 @@ int main() {
     net::init("http://localhost:3000");
 
     std::string lastValue;
+    int valore = 0;
     if (net::ping()) {
-        // invia una GET solo se il server risponde
-        net::get("test");
         lastValue = "In attesa di risposta...";
     } else {
         lastValue = "Server non raggiungibile su localhost:3000";
@@ -22,6 +21,21 @@ int main() {
     while (!WindowShouldClose()) {
         // controlla se ci sono risposte dal thread
         net::Response r;
+        // Aggiorna il valore prendendolo dal server
+        // Con l'if l'aggiornamento avviene solo se richiesto
+        // tramite la pressione del tasto R. Se invece si volesse
+        // averlo sempre, basterebbe rimuovere l'if
+        if (IsKeyPressed(KEY_R)) {
+            // chiede l'informazione che interessa
+            net::get("test");
+        }
+        // Aggiorna il valore scrivendolo sul server
+        if (IsKeyPressed(KEY_S)) {
+            // scrive il contatore sul server
+            valore++;
+            net::set("test", std::to_string(valore));
+        }
+        // se è presente
         if (net::pollResponse(r)) {
             if (r.value.has_value())
                 lastValue = "Valore ricevuto: " + r.value.value();

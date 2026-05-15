@@ -113,42 +113,72 @@ Ordine suggerito per usare il wrapper in modo semplice e robusto:
 
 1. Chiama `net::init("http://localhost:3000")` una sola volta all'avvio.
 2. Verifica la raggiungibilita del server con `net::ping()`.
-3. Invia richieste non bloccanti con `net::set(...)` e/o `net::get(...)`.
-4. Nel main loop, chiama `net::pollResponse(...)` a ogni frame per leggere le risposte.
+3. Invia richieste non bloccanti con `net::set(...)` e/o `net::get(...)` secondo la logica del programma.
+4. Nel main loop, chiama `net::pollResponse(...)` a ogni ciclo per leggere eventuali risposte.
 
 Esempio completo minimale:
 
 ```cpp
+#include "raylib.h"
 #include "net_wrapper.hpp"
-#include <iostream>
+#include <string>
 
 int main() {
+    InitWindow(800, 450, "RayLib + cpp-httplib demo");
+
+    // Server di test (es. un tuo microservizio)
     net::init("http://localhost:3000");
 
-    if (!net::ping()) {
-        std::cout << "Server non raggiungibile\n";
-        return 1;
+    std::string lastValue;
+    int valore = 0;
+    if (net::ping()) {
+        lastValue = "In attesa di risposta...";
+    } else {
+        lastValue = "Server non raggiungibile su localhost:3000";
     }
 
-    net::set("player1pos", "150,200");
-    net::get("player1pos");
+    SetTargetFPS(60);
 
-    // Simula il main loop
-    while (true) {
+    while (!WindowShouldClose()) {
+        // controlla se ci sono risposte dal thread
         net::Response r;
-        if (net::pollResponse(r)) {
-            if (r.value.has_value()) {
-                std::cout << "OK " << r.key << " = " << r.value.value() << "\n";
-            } else {
-                std::cout << "Errore su chiave: " << r.key << "\n";
-            }
-            break;
+        // Aggiorna il valore prendendolo dal server
+        // Con l'if l'aggiornamento avviene solo se richiesto
+        // tramite la pressione del tasto R. Se invece si volesse
+        // averlo sempre, basterebbe rimuovere l'if
+        if (IsKeyPressed(KEY_R)) {
+            // chiede l'informazione che interessa
+            net::get("test");
         }
+        // Aggiorna il valore scrivendolo sul server
+        if (IsKeyPressed(KEY_S)) {
+            // scrive il contatore sul server
+            valore++;
+            net::set("test", std::to_string(valore));
+        }
+        // se è presente
+        if (net::pollResponse(r)) {
+            if (r.value.has_value())
+                lastValue = "Valore ricevuto: " + r.value.value();
+            else
+                lastValue = "Errore nella richiesta.";
+        }
+
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("RayLib + HTTP async test", 30, 20, 20, DARKGRAY);
+        DrawText(lastValue.c_str(), 30, 80, 20, BLACK);
+
+        EndDrawing();
     }
+
+    CloseWindow();
+    return 0;
 }
 ```
 
-Nota: `set/get` non bloccano il thread principale; la lettura risultato avviene sempre tramite `pollResponse(...)`.
+Nota: `set/get` non bloccano il thread principale; la lettura del risultato avviene sempre tramite `pollResponse(...)`.
 
 ---
 
