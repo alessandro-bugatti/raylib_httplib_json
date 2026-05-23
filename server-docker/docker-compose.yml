@@ -7,6 +7,7 @@ services:
     volumes:
       - kv_data:/app/data
     restart: unless-stopped
+    tty: true
 
 volumes:
   kv_data:

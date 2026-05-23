@@ -207,3 +207,11 @@ volessero cancellare tutte le chiavi presenti eseguire:
 cd server-docker
 docker compose down -v
 ```
+
+
+Per attivare il tracciamento delle `set` in modo da poter debuggare meglio i propri programmi,
+eseguire il comando 
+
+```bash
+docker compose up
+```

@@ -4,7 +4,12 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({
+    // Conserva il payload grezzo per debug quando il parsing JSON non produce req.body atteso.
+    verify: (req, _res, buf) => {
+        req.rawBody = buf.toString("utf8");
+    }
+}));
 
 // Percorso al file persistente (grazie al volume Docker)
 const DATA_DIR = "/app/data";
@@ -44,7 +49,28 @@ app.get('/get/:key', (req, res) => {
 
 app.post('/set/:key', (req, res) => {
     const key = req.params.key;
-    const value = req.body.value;
+    const contentType = req.headers['content-type'] || "";
+
+    let value;
+    if (req.body && typeof req.body === 'object' && Object.prototype.hasOwnProperty.call(req.body, 'value')) {
+        value = req.body.value;
+    } else if (typeof req.body === 'string') {
+        value = req.body;
+    } else if (req.rawBody) {
+        try {
+            const parsed = JSON.parse(req.rawBody);
+            value = parsed.value;
+        } catch (_err) {
+            value = undefined;
+        }
+    }
+
+    process.stdout.write(`[SET] key=${key} value=${String(value)} content-type=${contentType} raw=${req.rawBody || ""}\n`);
+
+    if (typeof value === 'undefined') {
+        res.status(400).send("Missing 'value' in request body");
+        return;
+    }
 
     db[key] = value;
     saveDB();
