@@ -10,10 +10,11 @@ struct Comandi
 
 int main() {
 
-    InitWindow(800, 450, "RayLib + cpp-httplib demo");
+    InitWindow(800, 450, "RayLib + cpp-httplib game demo");
 
-    // Server di test (es. un tuo microservizio)
-    net::init("http://localhost:3000");
+    // Imposta manualmente l'IP del PC che ospita il server.
+    const std::string SERVER_URL = "http://127.0.0.1:3000";
+    net::init(SERVER_URL);
 
     net::ping();
 
@@ -59,6 +60,8 @@ int main() {
 
     const std::string mio_giocatore = "g" + std::to_string(giocatore);
     const std::string avversario = "g" + std::to_string(1 - giocatore);
+    const std::string ruoloLabel = "Ruolo: " + mio_giocatore;
+    const std::string serverLabel = "Server: " + SERVER_URL;
 
     //Il primo giocatore che si connette imposta le posizioni iniziali casuali e
     //le scrive sul server. Le posizioni sono nelle chiavi g0 e g1,
@@ -78,9 +81,12 @@ int main() {
         net::set("g1", std::to_string(x1) + "-" + std::to_string(y1));
     }
 
-    //Intervallo di aggiornamento delle informazioni prese dal server
-    const double networkIntervalSec = 1.0 / 30.0;
+    // Intervallo di rete ridotto per evitare backlog su rete/server lenti.
+    const double networkIntervalSec = 1.0 / 15.0;
     double nextNetworkTick = GetTime();
+    int lastSentX = x;
+    int lastSentY = y;
+    bool peerGetInFlight = false;
 
     SetTargetFPS(60);
 
@@ -103,22 +109,36 @@ int main() {
         y = std::clamp(y, 0, 430);
 
         const double now = GetTime();
-        //Con la frequenza settata in nextNetworkTick scrive la propria
-        //posizione sul server e legge quella dell'avversario
+        // Usa tick stabili: evita burst di richieste quando un frame ritarda.
         if (now >= nextNetworkTick) {
-            //Scrive la propria posizione
-            net::set(mio_giocatore, std::to_string(x) + "-" + std::to_string(y));
-            //Legge quella dell'aversario
-            net::get(avversario);
-            nextNetworkTick = now + networkIntervalSec;
+            nextNetworkTick += networkIntervalSec;
+
+            // Scrive sul server solo se la posizione locale e' cambiata.
+            if (x != lastSentX || y != lastSentY) {
+                net::set(mio_giocatore, std::to_string(x) + "-" + std::to_string(y));
+                lastSentX = x;
+                lastSentY = y;
+            }
+
+            // Mantiene al massimo una GET pendente per l'avversario.
+            if (!peerGetInFlight) {
+                net::get(avversario);
+                peerGetInFlight = true;
+            }
         }
 
         //Controlla i valori presenti sul server
         while (net::pollResponse(r)) {
-            //Se è il proprio valore viene ignorato
-            if (!r.value.has_value() || r.key == mio_giocatore) {
+            if (!r.value.has_value()) {
                 continue;
             }
+
+            if (r.key != avversario) {
+                continue;
+            }
+
+            peerGetInFlight = false;
+
             //Verifica se è un valore di posizione perchè contiene il carattere -
             const std::string &value = r.value.value();
             size_t sep = value.find('-');
@@ -138,6 +158,8 @@ int main() {
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
+        DrawText(serverLabel.c_str(), 10, 10, 20, DARKGRAY);
+        DrawText(ruoloLabel.c_str(), 10, 35, 20, DARKGRAY);
         //Disegna il giocatore
         DrawRectangle(x, y, 20, 20, colori[giocatore]);
         //Disegna l'avversario
