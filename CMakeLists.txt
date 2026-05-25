@@ -42,3 +42,16 @@ if (WIN32)
     target_compile_definitions(game PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX NOGDI NOUSER _WIN32_WINNT=0x0A00)
     target_link_libraries(game PRIVATE ws2_32)
 endif()
+
+# --- CONFIGURAZIONE SECONDO PROGRAMMA (main2.cpp) ---
+# Definiamo un nuovo nome per il target, ad esempio "main2_app"
+add_executable(chat src/chat.cpp)
+
+# Colleghiamo le stesse librerie e definizioni
+target_link_libraries(chat PRIVATE raylib)
+target_compile_definitions(chat PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
+
+if (WIN32)
+    target_compile_definitions(chat PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX NOGDI NOUSER _WIN32_WINNT=0x0A00)
+    target_link_libraries(chat PRIVATE ws2_32)
+endif()
