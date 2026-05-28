@@ -215,3 +215,25 @@ eseguire il comando
 ```bash
 docker compose up
 ```
+
+---
+
+## Endpoint Render del docente
+
+Per le esercitazioni, il professore ha attivato un servizio all'indirizzo `https://connettere-il-mondo.onrender.com`.
+Se si vuole usare quel server, sostituire quell'indirizzo nella chiamata `net::init(...)` al posto di `http://localhost:3000`.
+Il servizio è gratuito e potrebbe non essere sempre attivo: per informazioni su disponibilità e finestre di utilizzo, chiedere al professore.
+
+Quindi, anziché 
+
+```cpp
+// Indirizzo del server
+net::init("http://localhost:3000");
+```
+
+sarà necessario scrivere
+
+```cpp
+// Indirizzo del server
+net::init("https://connettere-il-mondo.onrender.com");
+```
